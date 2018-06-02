@@ -129,10 +129,13 @@ class Model(object):
                 loss = self.sess.run(self.loss, feed_dict=fd)
                 print("Step %d:  %.10f" %(step,loss))
 
+    # Define method for computing model predictions
+    def predict(self, eval_pts):
+        return self.sess.run(self.pred, feed_dict={self.x: eval_pts})
                 
     # Evaluate model
     def evaluate(self):
-        
+
         # Compute final loss on full dataset
         fd = {self.x: self.x_data, self.y: self.y_data}
         final_loss = self.sess.run(self.loss, feed_dict=fd)
@@ -140,7 +143,7 @@ class Model(object):
 
         # Plot predicted and true values for qualitative evaluation
         eval_pts = np.expand_dims(np.linspace(-np.pi/2, np.pi/2, 1000) , 1)
-        predictions = self.sess.run(self.pred, feed_dict={self.x: eval_pts})
+        predictions = self.predict(eval_pts)
         true_values = np.sin(eval_pts)
         plt.plot(eval_pts[:,0], predictions[:,0], 'b')
         plt.plot(eval_pts[:,0], true_values[:,0], 'r')

@@ -53,7 +53,20 @@ class Model(object):
         vdataset = vdataset.prefetch(self.batch_size*5)
         vdataset = vdataset.make_one_shot_iterator()
         vdataset = vdataset.get_next()
+
+        # Save training and validation indices
+        self.t_indices = t_indices
+        self.v_indices = v_indices
+        
         return [dataset, vdataset]
+
+    # Define method for retrieving training dataset
+    def get_train_data(self):
+        return [self.x_data[self.t_indices], self.y_data[self.t_indices]]
+
+    # Define method for retrieving validation dataset
+    def get_val_data(self):
+        return [self.x_data[self.v_indices], self.y_data[self.v_indices]]
 
     # Define neural network for model
     def network(self, X, training=True, reuse=None, name=None):
@@ -176,18 +189,21 @@ class Model(object):
                 vsummary = self.sess.run(self.merged_summaries, feed_dict=fd)
                 self.vwriter.add_summary(vsummary, step)
                 self.vwriter.flush()
+
+    # Define method for computing model predictions
+    def predict(self, eval_pts):
+        return self.sess.run(self.pred, feed_dict={self.x: eval_pts, self.training: False})
                 
     # Evaluate model
-    def evaluate(self):
-        
-        # Compute final loss on full dataset
-        fd = {self.x: self.x_data, self.y: self.y_data, self.training: False}
-        final_loss = self.sess.run(self.ms_loss, feed_dict=fd)
-        print("FINAL LOSS = %.10f" %(final_loss))
+    def evaluate(self, x_data, y_data):
+        fd = {self.x: x_data, self.y: y_data, self.training: False}
+        current_loss = self.sess.run(self.ms_loss, feed_dict=fd)
+        return current_loss
 
-        # Plot predicted and true values for qualitative evaluation
+    # Plot predicted and true values for qualitative evaluation
+    def plot_predictions(self):
         eval_pts = np.expand_dims(np.linspace(-np.pi/2, np.pi/2, 1000) , 1)
-        predictions = self.sess.run(self.pred, feed_dict={self.x: eval_pts, self.training: False})
+        predictions = self.predict(eval_pts)
         true_values = np.sin(eval_pts)
         plt.plot(eval_pts[:,0], predictions[:,0], 'b')
         plt.plot(eval_pts[:,0], true_values[:,0], 'r')
@@ -278,10 +294,19 @@ def main():
         # Set model session using restored sess
         model.set_session(sess)
 
-        # Evaluate model
-        model.evaluate()
+        # Evaluate model on training dataset
+        x_tdata, y_tdata = model.get_train_data()
+        train_loss = model.evaluate(x_tdata, y_tdata)
+        print("TRAINING LOSS = %.10f" %(train_loss))
 
-        
+        # Evaluate model on validation dataset
+        x_vdata, y_vdata = model.get_val_data()
+        val_loss = model.evaluate(x_vdata, y_vdata)
+        print("VALIDATION LOSS = %.10f" %(val_loss))
+
+        # Plot predictions
+        model.plot_predictions()
+
 # Run main() function when called directly
 if __name__ == '__main__':
     main()

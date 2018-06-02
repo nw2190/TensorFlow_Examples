@@ -95,10 +95,6 @@ class Model(object):
         self.x = tf.placeholder(tf.float32, [None, 1], name='x')
         self.y = tf.placeholder(tf.float32, [None, 1], name='y')
 
-        # Define constants for early stopping dataset
-        self.es_x = tf.constant(self.x_data, dtype=tf.float32, name='es_x')
-        self.es_y = tf.constant(self.y_data, dtype=tf.float32, name='es_y')
-
         # Define placeholder for learning rate and training status
         self.learning_rt = tf.placeholder(tf.float32, name='learning_rt')
         self.training = tf.placeholder(tf.bool, name='training')
@@ -115,10 +111,6 @@ class Model(object):
 
         # Define total loss function
         self.loss = tf.add(self.ms_loss, self.reg_loss, name='loss')
-
-        # Define tensors for early stopping
-        self.es_pred = self.network(self.es_x, training=False, reuse=True)
-        self.es_loss = tf.reduce_mean(tf.pow(self.es_pred - self.es_y, 2), name='es_loss')
 
         # Define update operations for batch normalization    
         self.update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
@@ -205,7 +197,9 @@ class Model(object):
         
 # Define early stopping hook
 class EarlyStoppingHook(session_run_hook.SessionRunHook):
-    def __init__(self, tolerance=0.01):
+    def __init__(self, x_data, y_data, tolerance=0.01):
+        self.x_data = x_data
+        self.y_data = y_data
         self.tolerance = tolerance
 
     # Initialize global and internal steps
@@ -219,10 +213,15 @@ class EarlyStoppingHook(session_run_hook.SessionRunHook):
     def before_run(self, run_context):
         if (self._step % 1000 == 0) and (not self._step == self._prev_step):
             graph = run_context.session.graph
-            loss_name = "es_loss:0"
-            loss_tensor = graph.get_tensor_by_name(loss_name)
+            loss_tensor = graph.get_tensor_by_name("ms_loss:0")
+            x_tensor = graph.get_tensor_by_name("x:0")
+            y_tensor = graph.get_tensor_by_name("y:0")
+            training_tensor = graph.get_tensor_by_name("training:0")
+            fd = {x_tensor: self.x_data,
+                  y_tensor: self.y_data,
+                  training_tensor: False}
             return session_run_hook.SessionRunArgs({'step': self._global_step_tensor,
-                                                    'loss': loss_tensor})
+                                                    'loss': loss_tensor}, feed_dict=fd)
         else:
             return session_run_hook.SessionRunArgs({'step': self._global_step_tensor})
                                                     
@@ -258,7 +257,7 @@ def main():
     with tf.train.MonitoredTrainingSession(
             checkpoint_dir = "./Model/Checkpoints/",
             hooks = [tf.train.StopAtStepHook(last_step=training_steps),
-                     EarlyStoppingHook(tolerance=0.0005)],
+                     EarlyStoppingHook(x_data, y_data, tolerance=0.0025)],
             save_summaries_steps = None,
             save_checkpoint_steps = 5000) as sess:
 

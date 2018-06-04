@@ -97,6 +97,7 @@ class Model(object):
         pred = tf.layers.dense(h, 1, activation=None,\
                                kernel_regularizer=wt_reg, reuse=reuse, name='dense_4')
 
+        # Assign name to final output
         pred = tf.identity(pred, name=name)
 
         return pred

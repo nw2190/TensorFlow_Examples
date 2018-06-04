@@ -163,8 +163,6 @@ class Model(object):
         # Resize predictions for plotting
         self.resized_imgs = tf.image.resize_images(self.pred, [self.plot_res, self.plot_res])
 
-        # Define variable initializer
-        self.init_op = tf.global_variables_initializer()
         
     # Train model
     def train(self):

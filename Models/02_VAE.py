@@ -43,9 +43,8 @@ class Model(object):
     def set_session(self, sess):
         self.sess = sess
 
-    # Reinitialize datasets and handles for restoring from checkpoint
-    def reinitialize_datasets(self):
-        #self.dataset, self.vdataset, self.edataset = self.loader.get_datasets()
+    # Reinitialize handles for datasets when restoring from checkpoint
+    def reinitialize_handles(self):
         self.training_handle = self.sess.run(self.dataset.string_handle())
         self.validation_handle = self.sess.run(self.vdataset.string_handle())
 
@@ -337,7 +336,7 @@ def main():
         model.plot_predictions("final")
 
         # Reinitialize dataset handles
-        model.reinitialize_datasets()
+        model.reinitialize_handles()
         
         # Evaluate model
         print("Evaluating Model:")

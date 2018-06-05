@@ -9,57 +9,17 @@ from tensorflow.python.training import session_run_hook
 from tensorflow.python.training import training_util
 
 
-# Class for loading training and validation datasets
-class Loader(object):
-    def __init__(self, batch_size=100, stopping_size=14000):
-        self.batch_size = batch_size
-        self.stopping_size = stopping_size
-
-    # Define method for retrieving training and validation
-    # dataset iterators with the specified mini-batch size
-    def get_datasets(self):
-
-        # Transforms 'example_proto' byte strings into decoded
-        # onehot label and resized image array (only returns the image)
-        def _parse_function(example_proto):
-            features = {"image": tf.FixedLenFeature((), tf.string, default_value=""),
-                        "label": tf.FixedLenFeature((), tf.string, default_value="")}
-            parsed_features = tf.parse_single_example(example_proto, features)
-            image = tf.decode_raw(parsed_features["image"], tf.uint8)
-            image = tf.cast(tf.reshape(image, [28, 28, 1]), tf.float32)
-            image = tf.divide(image, tf.constant(255.))
-            label = tf.decode_raw(parsed_features["image"], tf.uint8)
-            return image
-        
-        # Retrieve training dataset
-        dataset = tf.data.TFRecordDataset('./data/training.tfrecords')
-        dataset = dataset.map(_parse_function)
-        dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(self.batch_size*5))
-        dataset = dataset.batch(self.batch_size)
-        dataset = dataset.prefetch(self.batch_size*5)
-        dataset = dataset.make_one_shot_iterator()
-        #dataset = dataset.get_next()
-        
-        # Retrieve validation dataset
-        vdataset = tf.data.TFRecordDataset('./data/validation.tfrecords')
-        vdataset = vdataset.map(_parse_function)
-        vdataset = vdataset.apply(tf.contrib.data.shuffle_and_repeat(self.batch_size*5))
-        vdataset = vdataset.batch(self.batch_size)
-        vdataset = vdataset.prefetch(self.batch_size*5)
-        vdataset = vdataset.make_one_shot_iterator()
-        #vdataset = vdataset.get_next()
-
-        # Create early stopping batch from validation dataset
-        edataset = tf.data.TFRecordDataset('./data/validation.tfrecords')
-        edataset = edataset.map(_parse_function)
-        edataset = edataset.apply(tf.contrib.data.shuffle_and_repeat(self.stopping_size))
-        edataset = edataset.batch(self.stopping_size)
-        edataset = edataset.prefetch(self.stopping_size)
-        edataset = edataset.make_one_shot_iterator()
-        #edataset = edataset.get_next()
-
-        return dataset, vdataset, edataset
-
+# Transforms 'example_proto' byte strings into decoded
+# onehot label and resized image array (only returns the image)
+def _parse_function(example_proto):
+    features = {"image": tf.FixedLenFeature((), tf.string, default_value=""),
+                "label": tf.FixedLenFeature((), tf.string, default_value="")}
+    parsed_features = tf.parse_single_example(example_proto, features)
+    image = tf.decode_raw(parsed_features["image"], tf.uint8)
+    image = tf.cast(tf.reshape(image, [28, 28, 1]), tf.float32)
+    image = tf.divide(image, tf.constant(255.))
+    label = tf.decode_raw(parsed_features["image"], tf.uint8)
+    return image
 
 
 # Define early stopping hook
@@ -98,7 +58,7 @@ class EarlyStoppingHook(session_run_hook.SessionRunHook):
             for key, value in self.feed_dict.items():
                 placeholder = graph.get_tensor_by_name(key)
                 fd[placeholder] = value
-            
+
             return session_run_hook.SessionRunArgs({'step': self._global_step_tensor,
                                                     'loss': loss_tensor}, feed_dict=fd)
         else:

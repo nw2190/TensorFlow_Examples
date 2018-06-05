@@ -21,7 +21,13 @@ def checkFolders(dir_list):
     for dir in dir_list:
         checkFolder(dir)
 
-
+# Add suffix to end of tensor name
+def add_suffix(name, suffix):
+    if suffix is not None:
+        return name + suffix
+    else:
+        return name
+        
 # Creates byte feature for storing numpy arrays        
 def _bytes_feature(value):
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
@@ -140,24 +146,4 @@ def read_mnist_tfrecords():
         threads = tf.train.start_queue_runners(sess=sess, coord=coord)
         img, lab = sess.run([image,label])
         print([img, lab])
-
-# Define function for formatting time
-def convert_time(t):
-    hours = np.floor(t/3600.0)
-    if hours > 0:
-        minutes = np.floor((t/3600.0 - hours) * 60)
-        seconds = np.ceil(((t/3600.0 - hours) * 60 - minutes) * 60)
-        t_str = str(int(hours)) + 'h ' + \
-                str(int(minutes)).rjust(2) + 'm ' + \
-                str(int(seconds)).rjust(2) + 's'
-    elif np.floor((t/3600.0 - hours) * 60) > 0:
-        minutes = np.floor(t/60.0)
-        seconds = np.ceil((t/60.0 - minutes) * 60)
-        t_str = str(int(minutes)).rjust(2) + 'm  ' + \
-                str(int(seconds)).rjust(2) + 's'
-    else:
-        seconds = np.ceil(t)
-        t_str = str(int(seconds)).rjust(2) + 's'
-    return t_str
-
 

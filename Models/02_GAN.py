@@ -5,7 +5,7 @@ import sys
 import os
 
 # Import MNIST loader and utility functions from 'utils.py' file
-from utils import write_mnist_tfrecords, checkFolders, checkData, show_variables, add_suffix
+from utils import write_mnist_tfrecords, checkFolders, show_variables, add_suffix
 
 # Import layer definitions from 'layers.py' file
 from layers import dense, conv2d, conv2d_transpose, batch_norm
@@ -29,9 +29,6 @@ class Model(object):
             if key not in self.__dict__.keys():
                 self.__dict__[key] = val
                                         
-        # Check that data folder exists
-        checkData(self.data_dir)
-
         # Create tfrecords if file does not exist
         if not os.path.exists(os.path.join(self.data_dir,'training.tfrecords')):
             print("\n [ Creating tfrecords files ]\n")
@@ -50,7 +47,7 @@ class Model(object):
     def initialize_datasets(self, stopping_size=14000):
 
         # Define iterator for training dataset
-        self.dataset = tf.data.TFRecordDataset('./data/training.tfrecords')
+        self.dataset = tf.data.TFRecordDataset(os.path.join(self.data_dir, 'training.tfrecords'))
         self.dataset = self.dataset.map(_parse_mnist_image)
         self.dataset = self.dataset.apply(tf.contrib.data.shuffle_and_repeat(self.batch_size*5))
         self.dataset = self.dataset.batch(self.batch_size)
@@ -58,7 +55,7 @@ class Model(object):
         self.dataset = self.dataset.make_one_shot_iterator()
         
         # Define iterator for training dataset
-        self.vdataset = tf.data.TFRecordDataset('./data/validation.tfrecords')
+        self.vdataset = tf.data.TFRecordDataset(os.path.join(self.data_dir, 'validation.tfrecords'))
         self.vdataset = self.vdataset.map(_parse_mnist_image)
         self.vdataset = self.vdataset.apply(tf.contrib.data.shuffle_and_repeat(self.batch_size*5))
         self.vdataset = self.vdataset.batch(self.batch_size)
@@ -209,8 +206,8 @@ class Model(object):
     def train(self):
 
         # Define summary writer for saving log files (for training and validation)
-        self.writer = tf.summary.FileWriter(self.log_dir + 'training/', graph=tf.get_default_graph())
-        self.vwriter = tf.summary.FileWriter(self.log_dir + 'validation/', graph=tf.get_default_graph())
+        self.writer = tf.summary.FileWriter(os.path.join(self.log_dir, 'training/'), graph=tf.get_default_graph())
+        self.vwriter = tf.summary.FileWriter(os.path.join(self.log_dir, 'validation/'), graph=tf.get_default_graph())
 
         # Show list of all variables and total parameter count
         show_variables()
@@ -271,11 +268,12 @@ class Model(object):
 
     # Plot generated images for qualitative evaluation
     def plot_predictions(self, step):
-        plot_subdir = self.plot_dir + str(step) + "/"
+        plot_subdir = os.path.join(self.plot_dir, str(step))
         checkFolders([self.plot_dir, plot_subdir])
         resized_imgs = self.predict()
         for n in range(0, self.batch_size):
-            plt.imsave(plot_subdir + 'plot_' + str(n) + '.png', resized_imgs[n,:,:,0], cmap='gray')
+            plot_name = 'plot_' + str(n) + '.png'
+            plt.imsave(os.path.join(plot_subdir, plot_name) , resized_imgs[n,:,:,0], cmap='gray')
 
     # Compute cumulative loss over multiple batches
     def compute_cumulative_loss(self, loss, loss_ops, dataset_handle, batches):

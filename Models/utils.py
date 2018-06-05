@@ -11,7 +11,6 @@ from random import shuffle
 def show_variables():
     model_vars = tf.trainable_variables()
     slim.model_analyzer.analyze_vars(model_vars, print_info=True)
-
     
 # Create folders if they do not already exist
 def checkFolders(dir_list):
@@ -22,17 +21,16 @@ def checkFolders(dir_list):
 # Check that fulle MNIST dataset exists in specified directory
 def checkData(data_dir):
     if not os.path.exists(data_dir):
-        raise OSError("Specified data directory '" + data_dir + "' does not exist in filesystem.")
+        raise FileNotFoundError("Specified data directory '" + data_dir + "' does not exist in filesystem.")
     elif not os.path.exists(os.path.join(data_dir,'t10k-images-idx3-ubyte.gz')):
-        raise OSError("'t10k-images-idx3-ubyte.gz' not found in data directory.")
+        raise FileNotFoundError("'t10k-images-idx3-ubyte.gz' not found in data directory.")
     elif not os.path.exists(os.path.join(data_dir,'train-images-idx3-ubyte.gz')):
-        raise OSError("'train-images-idx3-ubyte.gz' not found in data directory.")
+        raise FileNotFoundError("'train-images-idx3-ubyte.gz' not found in data directory.")
     elif not os.path.exists(os.path.join(data_dir,'t10k-labels-idx1-ubyte.gz')):
-        raise OSError("'t10k-labels-idx1-ubyte.gz' not found in data directory.")
+        raise FileNotFoundError("'t10k-labels-idx1-ubyte.gz' not found in data directory.")
     elif not os.path.exists(os.path.join(data_dir,'train-labels-idx1-ubyte.gz')):
-        raise OSError("'train-labels-idx1-ubyte.gz' not found in data directory.")
+        raise FileNotFoundError("'train-labels-idx1-ubyte.gz' not found in data directory.")
 
-            
 # Add suffix to end of tensor name
 def add_suffix(name, suffix):
     if suffix is not None:
@@ -44,12 +42,13 @@ def add_suffix(name, suffix):
 def _bytes_feature(value):
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
-# Define loader for MNIST dataset
-# (available at http://yann.lecun.com/exdb/mnist/)
-def write_mnist_tfrecords():
-    # The four .gz files for the MNIST dataset
-    # should be placed in the "./data/" directory
-    data_dir = "./data/"
+# Define loader for MNIST dataset  (available at http://yann.lecun.com/exdb/mnist/)
+def write_mnist_tfrecords(data_dir="./data"):
+    # The four .gz files for the MNIST handwritten digit dataset should
+    # be placed in the "./data/" directory  unless otherwise specified
+
+    # Check that folder contains MNIST dataset
+    checkData(data_dir)
 
     """
     MNIST Loader modified from utils file in GitHub repo by 'hwalsuklee':
@@ -65,14 +64,14 @@ def write_mnist_tfrecords():
         return data
 
     # Load and merge handwritten digits from training and test datasets
-    x_data_1 = extract_data(data_dir + '/train-images-idx3-ubyte.gz', 60000, 16, 28 * 28)
-    x_data_2 = extract_data(data_dir + '/t10k-images-idx3-ubyte.gz', 10000, 16, 28 * 28)
+    x_data_1 = extract_data(os.path.join(data_dir, 'train-images-idx3-ubyte.gz'), 60000, 16, 28 * 28)
+    x_data_2 = extract_data(os.path.join(data_dir, 't10k-images-idx3-ubyte.gz'), 10000, 16, 28 * 28)
     x_data = np.concatenate((np.reshape(x_data_1,(60000, 28, 28, 1)),
                              np.reshape(x_data_2,(10000, 28, 28, 1))), axis=0)
 
     # Load and merge digit labels for training and test datasets
-    y_data_1 = extract_data(data_dir + '/train-labels-idx1-ubyte.gz', 60000, 8, 1)
-    y_data_2 = extract_data(data_dir + '/t10k-labels-idx1-ubyte.gz', 10000, 8, 1)
+    y_data_1 = extract_data(os.path.join(data_dir, 'train-labels-idx1-ubyte.gz'), 60000, 8, 1)
+    y_data_2 = extract_data(os.path.join(data_dir, 't10k-labels-idx1-ubyte.gz'), 10000, 8, 1)
     y_data = np.concatenate((np.reshape(y_data_1,(60000)),
                              np.reshape(y_data_2,(10000))), axis=0).astype(np.int)
 

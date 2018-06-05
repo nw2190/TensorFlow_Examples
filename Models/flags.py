@@ -18,7 +18,7 @@ def add_default_args(parser):
     parser.add_argument("--log_dir", default="./Model/logs/", type=str, help="Directory for saving log files")
     parser.add_argument("--checkpoint_step", default=500, type=int, help="Step count for saving checkpoints")
     parser.add_argument("--checkpoint_dir", default="./Model/Checkpoints/", type=str, help="Directory for saving checkpoints")
-    parser.add_argument("--plot_step", default=50, type=int, help="Step count for saving plots of generated images")
+    parser.add_argument("--plot_step", default=250, type=int, help="Step count for saving plots of generated images")
     parser.add_argument("--plot_dir", default="./Model/predictions/", type=str, help="Directory for saving plots of generated images")
     parser.add_argument("--plot_res", default=64, type=int, help="Resolution to use when saving generated images")
     

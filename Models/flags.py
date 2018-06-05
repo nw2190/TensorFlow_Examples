@@ -10,6 +10,7 @@ def add_default_args(parser):
     parser.add_argument("--lr_decay_step", default=1100, type=int, help="Learning rate decay step")
     parser.add_argument("--lr_decay_rate", default=0.75, type=float, help="Learning rate decay rate")
     parser.add_argument("--adam_beta1", default=0.5, type=float, help="Adam optimizer beta1 parameter")
+    parser.add_argument("--gpu_count", default=None, type=int, help="Number of GPUs available")
     
     # Saving and display options
     parser.add_argument("--data_dir", default="./data/", type=str, help="Directory containing MNIST gunzipped files")

@@ -214,15 +214,15 @@ class Model(object):
         print("\n[ Initializing Variables ]\n")
 
         # Get handles for training and validation datasets
-        self.training_handle = self.sess.run(self.dataset.string_handle())
-        self.validation_handle = self.sess.run(self.vdataset.string_handle())
+        self.training_handle, self.validation_handle = self.sess.run([self.dataset.string_handle(),
+                                                                      self.vdataset.string_handle()])
                     
         # Iterate through training steps
         while not self.sess.should_stop():
 
             # Update global step            
             step = tf.train.global_step(self.sess, self.global_step)
-            
+
             # Apply decay to learning rate
             if step % self.lr_decay_step == 0:
                 self.learning_rate = self.lr_decay_rate*self.learning_rate
@@ -278,7 +278,7 @@ class Model(object):
     # Compute cumulative loss over multiple batches
     def compute_cumulative_loss(self, loss, loss_ops, dataset_handle, batches):
         for n in range(0, batches):
-            fd = {self.dataset_handle: dataset_handle, self.training: False}
+            fd = {self.dataset_handle: dataset_handle, self.z: self.sample_z(self.batch_size), self.training: False}
             current_loss = self.sess.run(loss_ops, feed_dict=fd)
             loss = np.add(loss, current_loss)
             sys.stdout.write('Batch {0} of {1}\r'.format(n+1,batches))
@@ -324,7 +324,7 @@ def main():
         # Set model session
         model.set_session(sess)
         
-        # Train model
+        # Train model        
         model.train()
 
     print("\n[ TRAINING COMPLETE ]\n")

@@ -233,10 +233,10 @@ class Model(object):
         # Show list of all variables and total parameter count
         show_variables()
         print("\n[ Initializing Variables ]\n")
-
+        
         # Get handles for training and validation datasets
-        self.training_handle = self.sess.run(self.dataset.string_handle())
-        self.validation_handle = self.sess.run(self.vdataset.string_handle())
+        self.training_handle, self.validation_handle = self.sess.run([self.dataset.string_handle(),
+                                                                      self.vdataset.string_handle()])
 
         # Iterate through training steps
         while not self.sess.should_stop():

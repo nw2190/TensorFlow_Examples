@@ -168,8 +168,8 @@ class Model(object):
         print("\n[ Initializing Variables ]\n")
 
         # Get handles for training and validation datasets
-        self.training_handle = self.sess.run(self.dataset.string_handle())
-        self.validation_handle = self.sess.run(self.vdataset.string_handle())
+        self.training_handle, self.validation_handle = self.sess.run([self.dataset.string_handle(),
+                                                                      self.vdataset.string_handle()])
 
         # Iterate through training steps
         while not self.sess.should_stop():
@@ -282,7 +282,7 @@ def main():
     
     # Define saver which only keeps previous 3 checkpoints (default=10)
     scaffold = tf.train.Scaffold(saver=tf.train.Saver(max_to_keep=3))
-    
+
     # Initialize TensorFlow monitored training session
     with tf.train.MonitoredTrainingSession(
             checkpoint_dir = FLAGS.__dict__['checkpoint_dir'],

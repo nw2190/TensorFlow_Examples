@@ -3,7 +3,7 @@ Collection of TensorFlow Models for working with the MNIST dataset of handwritte
 
 ### Dataset
 The MNIST dataset of handwritten digits is available at:
-* MNIST dataset - http://yann.lecun.com/exdb/mnist/
+* MNIST - http://yann.lecun.com/exdb/mnist/
     
 The four gunzipped files should be placed the subdirectory './data/' of the 'Models/' folder.  The first time a model is called, the 'write_mnist_tfrecords()' function from the 'utils.py' file is executed in order to create the 'training.tfrecords' and 'validation.tfrecords' files used for training.  
 

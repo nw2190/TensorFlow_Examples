@@ -12,4 +12,11 @@ Run options for each model are definied in the flags.py file.  Default options a
 ```
 $ python 01_Classifier.py  --batch_size 100
 ```
-    
+
+Model checkpoints, logs, and predictions are stored in the './Model/' subdirectory by default.  The models are run using tf.MonitoredTrainingSession and save checkpoints in './Model/Checkpoints/' periodically throughout the training process; models are automatically restored whenever checkpoints exist in this folder.
+
+The training and validation loss can be monitored using TensorBoard via:
+```
+$ tensorboard --logdir=./Model/logs
+```
+        

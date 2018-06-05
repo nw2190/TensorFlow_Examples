@@ -34,10 +34,8 @@ def getFlags_Classifier():
     parser.add_argument("--label_count", default=10, type=int, help="Total number of labels")
     parser.add_argument("--plot_count", default=15, type=int, help="Number of predictions to display during training")
     parser.add_argument("--early_stopping_start", default=0, type=int, help="Starting step for early stopping checks")
-    #parser.add_argument("--early_stopping_step", default=500, type=int, help="Steps between early stopping checks")
-    #parser.add_argument("--early_stopping_tol", default=0.005, type=float, help="Tolerance for early stopping")
-    parser.add_argument("--early_stopping_step", default=100, type=int, help="Steps between early stopping checks")
-    parser.add_argument("--early_stopping_tol", default=0.5, type=float, help="Tolerance for early stopping")
+    parser.add_argument("--early_stopping_step", default=500, type=int, help="Steps between early stopping checks")
+    parser.add_argument("--early_stopping_tol", default=0.005, type=float, help="Tolerance for early stopping")
 
     # Parse arguments from command line
     args = parser.parse_args()

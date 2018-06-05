@@ -11,15 +11,27 @@ from tensorflow.python.training import training_util
 
 # Transforms 'example_proto' byte strings into decoded
 # onehot label and resized image array (only returns the image)
-def _parse_function(example_proto):
+def _parse_mnist_image(example_proto):
     features = {"image": tf.FixedLenFeature((), tf.string, default_value=""),
                 "label": tf.FixedLenFeature((), tf.string, default_value="")}
     parsed_features = tf.parse_single_example(example_proto, features)
     image = tf.decode_raw(parsed_features["image"], tf.uint8)
     image = tf.cast(tf.reshape(image, [28, 28, 1]), tf.float32)
     image = tf.divide(image, tf.constant(255.))
-    label = tf.decode_raw(parsed_features["image"], tf.uint8)
     return image
+
+# Transforms 'example_proto' byte strings into decoded
+# onehot label and resized image array 
+def _parse_mnist_data(example_proto):
+    features = {"image": tf.FixedLenFeature((), tf.string, default_value=""),
+                "label": tf.FixedLenFeature((), tf.string, default_value="")}
+    parsed_features = tf.parse_single_example(example_proto, features)
+    image = tf.decode_raw(parsed_features["image"], tf.uint8)
+    image = tf.cast(tf.reshape(image, [28, 28, 1]), tf.float32)
+    image = tf.divide(image, tf.constant(255.))
+    label = tf.decode_raw(parsed_features["label"], tf.uint8)
+    label = tf.cast(label, tf.float32)
+    return image, label
 
 
 # Define early stopping hook

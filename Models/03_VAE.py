@@ -11,7 +11,7 @@ from utils import write_mnist_tfrecords, checkFolders, show_all_variables, add_s
 from layers import dense, conv2d, conv2d_transpose, batch_norm
 
 # Import Loader class and EarlyStoppingHook from 'misc.py' file
-from misc import _parse_function, EarlyStoppingHook
+from misc import _parse_mnist_image, EarlyStoppingHook
 
 # Import Flags specifying model hyperparameters and training options
 from flags import getFlags_VAE
@@ -24,10 +24,6 @@ class Model(object):
     def __init__(self, data_count, flags):
         self.data_count = data_count
 
-        # Specify training and validation tfrecords filenames
-        self.training_filename = './data/training.tfrecords'
-        self.validation_filename = './data/validation.tfrecords'
-        
         # Read keys/values from flags and assign to self
         for key, val in flags.__dict__.items():
             if key not in self.__dict__.keys():
@@ -45,20 +41,25 @@ class Model(object):
     # Initialize datasets
     def initialize_datasets(self, stopping_size=14000):
 
-        # Defin placeholder for feeding tfrecords filenames
-        self.dataset_filename = tf.placeholder(tf.string, name="dataset_filename")
-        
-        # Define initializable iterator for training and validation datasets
-        self.dataset = tf.data.TFRecordDataset(self.dataset_filename)
-        self.dataset = self.dataset.map(_parse_function)
+        # Define iterator for training dataset
+        self.dataset = tf.data.TFRecordDataset('./data/training.tfrecords')
+        self.dataset = self.dataset.map(_parse_mnist_image)
         self.dataset = self.dataset.apply(tf.contrib.data.shuffle_and_repeat(self.batch_size*5))
         self.dataset = self.dataset.batch(self.batch_size)
         self.dataset = self.dataset.prefetch(self.batch_size*5)
-        self.dataset = self.dataset.make_initializable_iterator()
+        self.dataset = self.dataset.make_one_shot_iterator()
+        
+        # Define iterator for training dataset
+        self.vdataset = tf.data.TFRecordDataset('./data/validation.tfrecords')
+        self.vdataset = self.vdataset.map(_parse_mnist_image)
+        self.vdataset = self.vdataset.apply(tf.contrib.data.shuffle_and_repeat(self.batch_size*5))
+        self.vdataset = self.vdataset.batch(self.batch_size)
+        self.vdataset = self.vdataset.prefetch(self.batch_size*5)
+        self.vdataset = self.vdataset.make_one_shot_iterator()
 
         # Create early stopping batch from validation dataset
         self.edataset = tf.data.TFRecordDataset('./data/validation.tfrecords')
-        self.edataset = self.edataset.map(_parse_function)
+        self.edataset = self.edataset.map(_parse_mnist_image)
         self.edataset = self.edataset.apply(tf.contrib.data.shuffle_and_repeat(stopping_size))
         self.edataset = self.edataset.batch(stopping_size)
         self.edataset = self.edataset.make_one_shot_iterator()
@@ -66,6 +67,11 @@ class Model(object):
     # Specify session for model evaluations
     def set_session(self, sess):
         self.sess = sess
+
+    # Reinitialize handles for datasets when restoring from checkpoint
+    def reinitialize_handles(self):
+        self.training_handle = self.sess.run(self.dataset.string_handle())
+        self.validation_handle = self.sess.run(self.vdataset.string_handle())
 
     # Encoder component of VAE model
     def encoder(self, x, training=True, reuse=None, name=None):
@@ -174,9 +180,11 @@ class Model(object):
         """
         # Define placeholder for noise vector
         self.z = tf.placeholder(tf.float32, [None, self.z_dim], name='z')
-        
-        # Define data using the get_next() method of the dataset iterator
-        self.data = self.dataset.get_next()
+
+        # Define placeholder for dataset handle (to select training or validation)
+        self.dataset_handle = tf.placeholder(tf.string, shape=[], name='dataset_handle')
+        self.iterator = tf.data.Iterator.from_string_handle(self.dataset_handle, self.dataset.output_types, self.dataset.output_shapes)
+        self.data = self.iterator.get_next()
 
         # Define placeholder for learning rate and training status
         self.learning_rt = tf.placeholder(tf.float32, name='learning_rt')
@@ -221,6 +229,10 @@ class Model(object):
         show_all_variables()
         print("\n[ Initializing Variables ]\n")
 
+        # Get handles for training and validation datasets
+        self.training_handle = self.sess.run(self.dataset.string_handle())
+        self.validation_handle = self.sess.run(self.vdataset.string_handle())
+
         # Iterate through training steps
         while not self.sess.should_stop():
 
@@ -233,30 +245,30 @@ class Model(object):
 
             # Apply decay to learning rate
             if step % self.lr_decay_step == 0:
-                self.learning_rate = self.lr_decay_rate*self.learning_rate
+                self.learning_rate = np.power(self.lr_decay_rate, step/self.lr_decay_step)*self.learning_rate
 
             # Specify feed dictionary
-            fd = {self.dataset_filename: self.training_filename, self.z: np.zeros([self.batch_size, self.z_dim]),
+            fd = {self.dataset_handle: self.training_handle, self.z: np.zeros([self.batch_size, self.z_dim]),
                   self.learning_rt: self.learning_rate, self.training: True}
 
             # Save summaries, display progress, and update model
             if (step % self.summary_step == 0) and (step % self.display_step == 0):
-                summary, kl_loss, ml_loss, loss, _, __ = self.sess.run([self.merged_summaries, self.kl_loss, self.ml_loss,
-                                                                        self.loss, self.optim, self.dataset.initializer], feed_dict=fd)
+                summary, kl_loss, ml_loss, loss, _ = self.sess.run([self.merged_summaries, self.kl_loss, self.ml_loss,
+                                                                        self.loss, self.optim], feed_dict=fd)
                 print("Step %d:  %.10f [kl_loss]   %.10f [ml_loss]   %.10f [loss] " %(step,kl_loss,ml_loss,loss))
                 self.writer.add_summary(summary, step); self.writer.flush()
             # Save summaries and update model
             elif step % self.summary_step == 0:
-                summary, _, __ = self.sess.run([self.merged_summaries, self.optim, self.dataset.initializer], feed_dict=fd)
+                summary, _ = self.sess.run([self.merged_summaries, self.optim], feed_dict=fd)
                 self.writer.add_summary(summary, step); self.writer.flush()
             # Display progress and update model
             elif step % self.display_step == 0:
-                kl_loss, ml_loss, loss, _, __ = self.sess.run([self.kl_loss, self.ml_loss,
-                                                           self.loss, self.optim, self.dataset.initializer], feed_dict=fd)
+                kl_loss, ml_loss, loss, _ = self.sess.run([self.kl_loss, self.ml_loss,
+                                                           self.loss, self.optim], feed_dict=fd)
                 print("Step %d:  %.10f [kl_loss]   %.10f [ml_loss]   %.10f [loss] " %(step,kl_loss,ml_loss,loss))
             # Update model
             else:
-                self.sess.run([self.optim, self.dataset.initializer], feed_dict=fd)
+                self.sess.run([self.optim], feed_dict=fd)
 
             # Plot predictions
             if step % self.plot_step == 0:
@@ -269,7 +281,7 @@ class Model(object):
 
             # Save validation summaries
             if step % self.summary_step == 0:
-                fd = {self.dataset_filename: self.validation_filename, self.z: np.zeros([self.batch_size, self.z_dim]),
+                fd = {self.dataset_handle: self.validation_handle, self.z: np.zeros([self.batch_size, self.z_dim]),
                       self.training: False}
                 vsummary = self.sess.run(self.merged_summaries, feed_dict=fd)
                 self.vwriter.add_summary(vsummary, step); self.vwriter.flush()
@@ -280,9 +292,9 @@ class Model(object):
             fd = {self.z: self.sample_z(self.batch_size), self.training: False}
             return self.sess.run(self.resized_imgs, feed_dict=fd)
         else:
-            fd = {self.dataset_filename: self.validation_filename, self.z: np.zeros([self.batch_size, self.z_dim]),
+            fd = {self.dataset_handle: self.validation_handle, self.z: np.zeros([self.batch_size, self.z_dim]),
                   self.training: False}
-            _, data, pred =  self.sess.run([self.dataset.initializer, self.resized_data, self.resized_pred], feed_dict=fd)
+            data, pred =  self.sess.run([self.resized_data, self.resized_pred], feed_dict=fd)
             return data, pred
 
     # Plot generated images for qualitative evaluation
@@ -303,12 +315,10 @@ class Model(object):
             plt.imsave(plot_subdir + 'pred_' + str(n) + '.png', resized_pred[n,:,:,0], cmap='gray')
 
     # Compute cumulative loss over multiple batches
-    def compute_cumulative_loss(self, loss, loss_ops, dataset_filename, batches):
+    def compute_cumulative_loss(self, loss, loss_ops, dataset_handle, batches):
         for n in range(0, batches):
-            fd = {self.dataset_filename: dataset_filename, self.training: False}
-            self.sess.run(self.dataset.initializer, feed_dict={self.dataset_filename: self.validation_filename})
-            results = self.sess.run(loss_ops + [self.dataset.initializer], feed_dict=fd)
-            current_loss = results[:-1]
+            fd = {self.dataset_handle: dataset_handle, self.training: False}
+            current_loss = self.sess.run(loss_ops, feed_dict=fd)
             loss = np.add(loss, current_loss)
             sys.stdout.write('Batch {0} of {1}\r'.format(n+1,batches))
             sys.stdout.flush()
@@ -319,9 +329,9 @@ class Model(object):
         t_batches = int(np.floor(0.8 * self.data_count/self.batch_size))
         v_batches = int(np.floor(0.2 * self.data_count/self.batch_size))
         print("\nTraining dataset:")
-        training_loss = self.compute_cumulative_loss([0.], [self.loss], self.training_filename, t_batches)
+        training_loss = self.compute_cumulative_loss([0.], [self.loss], self.training_handle, t_batches)
         print("\n\nValidation dataset:")
-        validation_loss = self.compute_cumulative_loss([0.], [self.loss], self.validation_filename, v_batches)
+        validation_loss = self.compute_cumulative_loss([0.], [self.loss], self.validation_handle, v_batches)
         training_loss = training_loss/t_batches
         validation_loss = validation_loss/v_batches
         return training_loss, validation_loss
@@ -346,7 +356,6 @@ def main():
 
     # Define feed dictionary and loss name for EarlyStoppingHook
     loss_name = "loss_stopping:0"
-    #loss_name = "loss:0"
     start_step = FLAGS.__dict__['early_stopping_start']
     stopping_step = FLAGS.__dict__['early_stopping_step']
     tolerance = FLAGS.__dict__['early_stopping_tol']
@@ -382,6 +391,9 @@ def main():
 
         # Plot final predictions
         model.plot_predictions("final")
+
+        # Reinitialize dataset handles
+        model.reinitialize_handles()
 
         # Evaluate model
         print("[ Evaluating Model ]")

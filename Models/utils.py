@@ -8,19 +8,31 @@ import tensorflow.contrib.slim as slim
 from random import shuffle
 
 # Show all variables in current model
-def show_all_variables():
+def show_variables():
     model_vars = tf.trainable_variables()
     slim.model_analyzer.analyze_vars(model_vars, print_info=True)
 
     
-# Create folder if it does not already exist
-def checkFolder(dir):
-    if not os.path.exists(dir):
-        os.makedirs(dir)
+# Create folders if they do not already exist
 def checkFolders(dir_list):
-    for dir in dir_list:
-        checkFolder(dir)
+    for dir in list(dir_list):
+        if not os.path.exists(dir):
+            os.makedirs(dir)
 
+# Check that fulle MNIST dataset exists in specified directory
+def checkData(data_dir):
+    if not os.path.exists(data_dir):
+        raise OSError("Specified data directory '" + data_dir + "' does not exist in filesystem.")
+    elif not os.path.exists(os.path.join(data_dir,'t10k-images-idx3-ubyte.gz')):
+        raise OSError("'t10k-images-idx3-ubyte.gz' not found in data directory.")
+    elif not os.path.exists(os.path.join(data_dir,'train-images-idx3-ubyte.gz')):
+        raise OSError("'train-images-idx3-ubyte.gz' not found in data directory.")
+    elif not os.path.exists(os.path.join(data_dir,'t10k-labels-idx1-ubyte.gz')):
+        raise OSError("'t10k-labels-idx1-ubyte.gz' not found in data directory.")
+    elif not os.path.exists(os.path.join(data_dir,'train-labels-idx1-ubyte.gz')):
+        raise OSError("'train-labels-idx1-ubyte.gz' not found in data directory.")
+
+            
 # Add suffix to end of tensor name
 def add_suffix(name, suffix):
     if suffix is not None:

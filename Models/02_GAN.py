@@ -5,7 +5,7 @@ import sys
 import os
 
 # Import MNIST loader and utility functions from 'utils.py' file
-from utils import write_mnist_tfrecords, checkFolders, show_all_variables, add_suffix
+from utils import write_mnist_tfrecords, checkFolders, checkData, show_variables, add_suffix
 
 # Import layer definitions from 'layers.py' file
 from layers import dense, conv2d, conv2d_transpose, batch_norm
@@ -29,6 +29,14 @@ class Model(object):
             if key not in self.__dict__.keys():
                 self.__dict__[key] = val
                                         
+        # Check that data folder exists
+        checkData(self.data_dir)
+
+        # Create tfrecords if file does not exist
+        if not os.path.exists(os.path.join(self.data_dir,'training.tfrecords')):
+            print("\n [ Creating tfrecords files ]\n")
+            write_mnist_tfrecords(self.data_dir)
+
         # Initialize training and validation datasets
         self.initialize_datasets()
 
@@ -205,7 +213,7 @@ class Model(object):
         self.vwriter = tf.summary.FileWriter(self.log_dir + 'validation/', graph=tf.get_default_graph())
 
         # Show list of all variables and total parameter count
-        show_all_variables()
+        show_variables()
         print("\n[ Initializing Variables ]\n")
 
         # Get handles for training and validation datasets
@@ -299,11 +307,6 @@ def main():
     # Define model parameters and options in dictionary of flags
     FLAGS = getFlags_GAN()
 
-    # Create tfrecords if file does not exist
-    if not os.path.exists('./data/training.tfrecords'):
-        print("\n [ Creating tfrecords files ]\n")
-        write_mnist_tfrecords()
-    
     # Initialize model
     model = Model(70000, FLAGS)
 

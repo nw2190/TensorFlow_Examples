@@ -12,6 +12,7 @@ def add_default_args(parser):
     parser.add_argument("--adam_beta1", default=0.5, type=float, help="Adam optimizer beta1 parameter")
     
     # Saving and display options
+    parser.add_argument("--data_dir", default="./data/", type=str, help="Directory containing MNIST gunzipped files")
     parser.add_argument("--display_step", default=1, type=int, help="Step count for displaying progress")
     parser.add_argument("--summary_step", default=100, type=int, help="Step count for saving summaries")
     parser.add_argument("--log_dir", default="./Model/logs/", type=str, help="Directory for saving log files")

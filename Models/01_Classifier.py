@@ -4,12 +4,12 @@ import sys
 import os
 
 # Import MNIST loader and utility functions from 'utils.py' file
-from utils import write_mnist_tfrecords, checkFolders, show_all_variables, add_suffix
+from utils import write_mnist_tfrecords, checkFolders, checkData, show_variables, add_suffix
 
 # Import layer definitions from 'layers.py' file
 from layers import dense, conv2d, conv2d_transpose, batch_norm
 
-# Import Loader class and EarlyStoppingHook from 'misc.py' file
+# Import parse function for tfrecords features  and EarlyStoppingHook from 'misc.py' file
 from misc import _parse_mnist_data, EarlyStoppingHook
 
 # Import Flags specifying model hyperparameters and training options
@@ -27,7 +27,15 @@ class Model(object):
         for key, val in flags.__dict__.items():
             if key not in self.__dict__.keys():
                 self.__dict__[key] = val
-                                        
+
+        # Check that data folder exists
+        checkData(self.data_dir)
+
+        # Create tfrecords if file does not exist
+        if not os.path.exists(os.path.join(self.data_dir,'training.tfrecords')):
+            print("\n [ Creating tfrecords files ]\n")
+            write_mnist_tfrecords(self.data_dir)
+
         # Initialize datasets for training, validation, and early stopping checks
         self.initialize_datasets()
         
@@ -159,7 +167,7 @@ class Model(object):
         self.vwriter = tf.summary.FileWriter(self.log_dir + 'validation/', graph=tf.get_default_graph())
 
         # Show list of all variables and total parameter count
-        show_all_variables()
+        show_variables()
         print("\n[ Initializing Variables ]\n")
 
         # Get handles for training and validation datasets
@@ -262,11 +270,6 @@ def main():
 
     # Define model parameters and options in dictionary of flags
     FLAGS = getFlags_Classifier()
-
-    # Create tfrecords if file does not exist
-    if not os.path.exists('./data/training.tfrecords'):
-        print("\n [ Creating tfrecords files ]\n")
-        write_mnist_tfrecords()
     
     # Initialize model
     model = Model(70000, FLAGS)

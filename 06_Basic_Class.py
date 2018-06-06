@@ -6,14 +6,15 @@ import numpy as np
 class Model(object):
     
     # Initialize model
-    def __init__(self, sess, x_data, y_data, batch_size):
+    def __init__(self, sess, x_data, y_data, learning_rate, batch_size):
         self.sess = sess
         self.x_data = x_data
         self.y_data = y_data
+        self.learning_rate = learning_rate
         self.batch_size = batch_size
 
     # Define loader for training dataset with mini-batch size 100
-    def initialize_loader(self):
+    def initialize_dataset(self):
         dataset = tf.data.Dataset.from_tensor_slices((self.x_data,self.y_data))
         dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(self.batch_size*5))
         dataset = dataset.batch(self.batch_size)
@@ -59,24 +60,21 @@ class Model(object):
         # Initialize variables
         self.sess.run(self.init)
 
-        # Initialize data loader
-        self.dataset = self.initialize_loader()
-
-        # Specify initial learning rate
-        learning_rate = 0.001
+        # Initialize dataset
+        self.dataset = self.initialize_dataset()
 
         # Iterate through 20000 training steps
         for n in range(0,20000):
 
-            # Retrieve batch from data loader
+            # Retrieve batch from loader for training dataset
             x_batch, y_batch = self.sess.run(self.dataset)
 
             # Apply decay to learning rate every 1000 steps
             if n % 1000 == 0:
-                learning_rate = 0.9*learning_rate
+                self.learning_rate = 0.9*self.learning_rate
 
             # Run optimization operation for current mini-batch
-            fd = {self.x: x_batch, self.y: y_batch, self.learning_rt: learning_rate}
+            fd = {self.x: x_batch, self.y: y_batch, self.learning_rt: self.learning_rate}
             self.sess.run(self.optim, feed_dict=fd)
 
     # Define method for computing model predictions
@@ -100,11 +98,17 @@ def main():
     x_data = np.pi/2 * np.random.normal(size=[100*10000, 1])
     y_data = np.sin(x_data)
 
+    # Specify initial learning rate
+    learning_rate = 0.001
+
+    # Specify training batch size
+    batch_size = 100
+    
     # Initialize TensorFlow session
     with tf.Session() as sess:
 
         # Initialize model
-        model = Model(sess, x_data, y_data, 100)
+        model = Model(sess, x_data, y_data, learning_rate, batch_size)
 
         # Build model graph
         model.build_model()

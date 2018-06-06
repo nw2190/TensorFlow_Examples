@@ -7,7 +7,7 @@ x_data = np.pi/2 * np.random.normal(size=[100*10000, 1])
 y_data = np.sin(x_data)
 
 # Define loader for training dataset with mini-batch size 100
-def initialize_loader():
+def initialize_dataset():
     dataset = tf.data.Dataset.from_tensor_slices((x_data,y_data))
     dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(100*5))
     dataset = dataset.batch(100)
@@ -50,8 +50,8 @@ with tf.Session() as sess:
     # Initialize variables
     sess.run(init)
 
-    # Initialize data loader
-    dataset = initialize_loader()
+    # Initialize dataset
+    dataset = initialize_dataset()
 
     # Specify initial learning rate
     learning_rate = 0.001
@@ -59,7 +59,7 @@ with tf.Session() as sess:
     # Iterate through 20000 training steps
     for n in range(0,20000):
 
-        # Retrieve batch from data loader
+        # Retrieve batch from loader for training dataset
         x_batch, y_batch = sess.run(dataset)
 
         # Apply decay to learning rate every 1000 steps

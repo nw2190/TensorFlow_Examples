@@ -7,9 +7,10 @@ from random import shuffle
 class Model(object):
     
     # Initialize model
-    def __init__(self, x_data, y_data, batch_size):
+    def __init__(self, x_data, y_data, learning_rate, batch_size):
         self.x_data = x_data
         self.y_data = y_data
+        self.learning_rate = learning_rate
         self.batch_size = batch_size
 
         # Initialize training and validation datasets
@@ -136,9 +137,6 @@ class Model(object):
     # Train model
     def train(self):
 
-        # Specify initial learning rate
-        learning_rate = 0.0075
-
         # Define summary writer for saving log files (for training and validation)
         self.writer = tf.summary.FileWriter('./Model/logs/training/', graph=tf.get_default_graph())
         self.vwriter = tf.summary.FileWriter('./Model/logs/validation/', graph=tf.get_default_graph())
@@ -154,11 +152,11 @@ class Model(object):
 
             # Apply decay to learning rate every 1000 steps
             if step % 1000 == 0:
-                learning_rate = 0.9*learning_rate
+                self.learning_rate = 0.9*self.learning_rate
 
             # Run optimization operation for current mini-batch
             fd = {self.x: x_batch, self.y: y_batch,
-                  self.learning_rt: learning_rate, self.training: True}
+                  self.learning_rt: self.learning_rate, self.training: True}
             self.sess.run(self.optim, feed_dict=fd)
 
             # Save summary every 100 steps
@@ -210,8 +208,14 @@ def main():
     noise = np.random.normal(scale=0.0, size=[100*10000, 1])
     y_data = np.sin(x_data) + noise
 
+    # Specify initial learning rate
+    learning_rate = 0.00075
+
+    # Specify training batch size
+    batch_size = 100
+
     # Initialize model
-    model = Model(x_data, y_data, 100)
+    model = Model(x_data, y_data, learning_rate, batch_size)
 
     # Specify number of training steps
     training_steps = 60000

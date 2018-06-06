@@ -60,8 +60,8 @@ class Model(object):
         self.loss = tf.reduce_mean(tf.pow(self.pred - self.y, 2))
 
         # Define optimizer
-        self.optim = tf.train.AdamOptimizer(learning_rate=self.learning_rt).\
-            minimize(self.loss, global_step=self.global_step)
+        self.optim = tf.train.AdamOptimizer(learning_rate=self.learning_rt) \
+                             .minimize(self.loss, global_step=self.global_step)
 
         # Define summary operation for saving losses
         tf.summary.scalar("Loss", self.loss)

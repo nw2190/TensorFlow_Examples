@@ -69,28 +69,28 @@ class Model(object):
         wt_reg = tf.contrib.layers.l2_regularizer(0.0000001)
         
         # Define fully-connected layer with 10 hidden units
-        h = tf.layers.dense(X, 10, activation=tf.nn.sigmoid,\
-                            kernel_regularizer=wt_reg, reuse=reuse, name='dense_1')
+        h = tf.layers.dense(X, 10, activation=tf.nn.sigmoid, kernel_regularizer=wt_reg,
+                            reuse=reuse, name='dense_1')
         
         # Define batch normalization layer
-        h = tf.layers.batch_normalization(h, scale=True, momentum=0.99,
-                                          training=training, reuse=reuse, name='bn_1')
+        h = tf.layers.batch_normalization(h, scale=True, momentum=0.99, training=training,
+                                          reuse=reuse, name='bn_1')
         
         # Define fully-connected layer with 20 hidden units
-        h = tf.layers.dense(h, 20, activation=tf.nn.sigmoid,\
-                            kernel_regularizer=wt_reg, reuse=reuse, name='dense_2')
+        h = tf.layers.dense(h, 20, activation=tf.nn.sigmoid, kernel_regularizer=wt_reg,
+                            reuse=reuse, name='dense_2')
         
         # Define batch normalization layer
-        h = tf.layers.batch_normalization(h, scale=True, momentum=0.99,
-                                          training=training, reuse=reuse, name='bn_2')
+        h = tf.layers.batch_normalization(h, scale=True, momentum=0.99, training=training,
+                                          reuse=reuse, name='bn_2')
 
         # Define fully-connected layer with 10 hidden units
-        h = tf.layers.dense(h, 10, activation=tf.nn.sigmoid,\
-                            kernel_regularizer=wt_reg, reuse=reuse, name='dense_3')
+        h = tf.layers.dense(h, 10, activation=tf.nn.sigmoid, kernel_regularizer=wt_reg,
+                            reuse=reuse, name='dense_3')
 
         # Define fully-connected layer to single ouput prediction
-        pred = tf.layers.dense(h, 1, activation=None,\
-                               kernel_regularizer=wt_reg, reuse=reuse, name='dense_4')
+        pred = tf.layers.dense(h, 1, activation=None, kernel_regularizer=wt_reg,
+                               reuse=reuse, name='dense_4')
 
         # Assign name to final output
         pred = tf.identity(pred, name=name)
@@ -126,8 +126,8 @@ class Model(object):
         
         # Define optimizer
         with tf.control_dependencies(self.update_ops):
-            self.optim = tf.train.AdamOptimizer(learning_rate=self.learning_rt).\
-                minimize(self.loss, global_step=self.global_step)
+            self.optim = tf.train.AdamOptimizer(learning_rate=self.learning_rt) \
+                                 .minimize(self.loss, global_step=self.global_step)
 
         # Define summary operation for saving losses
         tf.summary.scalar("MS_Loss", self.ms_loss)

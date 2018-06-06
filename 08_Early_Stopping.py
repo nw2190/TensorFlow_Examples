@@ -80,8 +80,8 @@ class Model(object):
         self.es_loss = tf.reduce_mean(tf.pow(self.es_pred - self.es_y, 2), name='stopping_loss')
 
         # Define optimizer
-        self.optim = tf.train.AdamOptimizer(learning_rate=self.learning_rt).\
-            minimize(self.loss, global_step=self.global_step)
+        self.optim = tf.train.AdamOptimizer(learning_rate=self.learning_rt) \
+                             .minimize(self.loss, global_step=self.global_step)
 
         # Define summary operation for saving losses
         tf.summary.scalar("Loss", self.loss)

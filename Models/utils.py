@@ -43,9 +43,9 @@ def _bytes_feature(value):
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
 # Define loader for MNIST dataset  (available at http://yann.lecun.com/exdb/mnist/)
-def write_mnist_tfrecords(data_dir="./data"):
+def write_mnist_tfrecords(data_dir="./data/"):
     # The four .gz files for the MNIST handwritten digit dataset should
-    # be placed in the "./data/" directory  unless otherwise specified
+    # be placed in the "./data/" directory unless otherwise specified
 
     # Check that folder contains MNIST dataset
     checkData(data_dir)
@@ -60,20 +60,20 @@ def write_mnist_tfrecords(data_dir="./data"):
         with gzip.open(filename) as bytestream:
             bytestream.read(head_size)
             buf = bytestream.read(data_size * num_data)
-            data = np.frombuffer(buf, dtype=np.uint8).astype(np.float)
+            data = np.frombuffer(buf, dtype=np.uint8)
         return data
 
     # Load and merge handwritten digits from training and test datasets
-    x_data_1 = extract_data(os.path.join(data_dir, 'train-images-idx3-ubyte.gz'), 60000, 16, 28 * 28)
-    x_data_2 = extract_data(os.path.join(data_dir, 't10k-images-idx3-ubyte.gz'), 10000, 16, 28 * 28)
+    x_data_1 = extract_data(os.path.join(data_dir,'train-images-idx3-ubyte.gz'), 60000, 16, 28*28)
+    x_data_2 = extract_data(os.path.join(data_dir,'t10k-images-idx3-ubyte.gz'), 10000, 16, 28*28)
     x_data = np.concatenate((np.reshape(x_data_1,(60000, 28, 28, 1)),
                              np.reshape(x_data_2,(10000, 28, 28, 1))), axis=0)
 
     # Load and merge digit labels for training and test datasets
-    y_data_1 = extract_data(os.path.join(data_dir, 'train-labels-idx1-ubyte.gz'), 60000, 8, 1)
-    y_data_2 = extract_data(os.path.join(data_dir, 't10k-labels-idx1-ubyte.gz'), 10000, 8, 1)
+    y_data_1 = extract_data(os.path.join(data_dir,'train-labels-idx1-ubyte.gz'), 60000, 8, 1)
+    y_data_2 = extract_data(os.path.join(data_dir,'t10k-labels-idx1-ubyte.gz'), 10000, 8, 1)
     y_data = np.concatenate((np.reshape(y_data_1,(60000)),
-                             np.reshape(y_data_2,(10000))), axis=0).astype(np.int)
+                             np.reshape(y_data_2,(10000))), axis=0)
 
     # Convert labels to collection of one-hot vectors
     y_onehot = np.zeros((len(y_data), 10), dtype=np.uint8)
@@ -97,7 +97,7 @@ def write_mnist_tfrecords(data_dir="./data"):
     """
 
     # Save training dataset in .tfrecords file
-    train_filename = './data/training.tfrecords'
+    train_filename = os.path.join(data_dir, 'training.tfrecords')
     writer = tf.python_io.TFRecordWriter(train_filename)
     for i in t_indices:
         img = x_data[i]
@@ -117,7 +117,7 @@ def write_mnist_tfrecords(data_dir="./data"):
     writer.close()
 
     # Save validation dataset in .tfrecords file
-    val_filename = './data/validation.tfrecords'
+    val_filename = os.path.join(data_dir, 'validation.tfrecords')
     writer = tf.python_io.TFRecordWriter(val_filename)
     for i in v_indices:
         img = x_data[i]
@@ -136,10 +136,10 @@ def write_mnist_tfrecords(data_dir="./data"):
     # Close .tfrecords writer            
     writer.close()
 
-# Read one example from tfrecords file (used to check formatting)
-def read_mnist_tfrecords():
+# Read one example from tfrecords file (used for debugging purposes)
+def read_mnist_tfrecords(data_dir="./data/"):
     reader = tf.TFRecordReader()
-    filenames = './data/training.tfrecords'
+    filenames = os.path.join(data_dir, 'training.tfrecords')
     filename_queue = tf.train.string_input_producer(filenames)
     _, serialized_example = reader.read(filename_queue)
     feature_set = {'image': tf.FixedLenFeature([], tf.string),

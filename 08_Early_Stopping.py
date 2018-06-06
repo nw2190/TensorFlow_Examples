@@ -77,7 +77,7 @@ class Model(object):
 
         # Define tensors for early stopping
         self.es_pred = self.network(self.es_x, reuse=True)
-        self.es_loss = tf.reduce_mean(tf.pow(self.es_pred - self.es_y, 2), name='es_loss')
+        self.es_loss = tf.reduce_mean(tf.pow(self.es_pred - self.es_y, 2), name='stopping_loss')
 
         # Define optimizer
         self.optim = tf.train.AdamOptimizer(learning_rate=self.learning_rt).\
@@ -166,7 +166,7 @@ class EarlyStoppingHook(session_run_hook.SessionRunHook):
     def before_run(self, run_context):
         if (self._step % 1000 == 0) and (not self._step == self._prev_step):
             graph = run_context.session.graph
-            loss_name = "es_loss:0"
+            loss_name = "stopping_loss:0"
             loss_tensor = graph.get_tensor_by_name(loss_name)
             return session_run_hook.SessionRunArgs({'step': self._global_step_tensor,
                                                     'loss': loss_tensor})

@@ -3,11 +3,6 @@ import tensorflow as tf
 import numpy as np
 from random import shuffle
 
-# Import base model for defining early stopping hook
-# https://github.com/tensorflow/tensorflow/blob/master/tensorflow/python/training/session_run_hook.py
-from tensorflow.python.training import session_run_hook
-from tensorflow.python.training import training_util
-
 # Class representation of network model
 class Model(object):
     
@@ -159,10 +154,6 @@ class Model(object):
             # Retrieve batch from data loader
             x_batch, y_batch = self.sess.run(self.dataset)
 
-            # Break if early stopping hook requests stop after sess.run()
-            if self.sess.should_stop():
-                break
-
             # Apply decay to learning rate every 1000 steps
             if step % 1000 == 0:
                 learning_rate = 0.8*learning_rate
@@ -211,50 +202,6 @@ class Model(object):
         plt.scatter(self.x_data[0:10000,0], self.y_data[0:10000,0], alpha=0.05)
         plt.show()
 
-        
-# Define early stopping hook
-class EarlyStoppingHook(session_run_hook.SessionRunHook):
-    def __init__(self, x_data, y_data, tolerance=0.01):
-        self.x_data = x_data
-        self.y_data = y_data
-        self.tolerance = tolerance
-
-    # Initialize global and internal steps
-    def begin(self):
-        self._global_step_tensor = training_util._get_or_create_global_step_read()
-        self._prev_step = -1
-        self._step = 0
-
-    # Evaluate early stopping loss every 1000 steps
-    # (avoiding repetition when multiple run calls are made each step)
-    def before_run(self, run_context):
-        if (self._step % 1000 == 0) and (not self._step == self._prev_step):
-            graph = run_context.session.graph
-            loss_tensor = graph.get_tensor_by_name("ms_loss:0")
-            x_tensor = graph.get_tensor_by_name("x:0")
-            y_tensor = graph.get_tensor_by_name("y:0")
-            training_tensor = graph.get_tensor_by_name("training:0")
-            fd = {x_tensor: self.x_data,
-                  y_tensor: self.y_data,
-                  training_tensor: False}
-            return session_run_hook.SessionRunArgs({'step': self._global_step_tensor,
-                                                    'loss': loss_tensor}, feed_dict=fd)
-        else:
-            return session_run_hook.SessionRunArgs({'step': self._global_step_tensor})
-                                                    
-    # Check if current loss is below tolerance for early stopping
-    def after_run(self, run_context, run_values):
-        if (self._step % 1000 == 0) and (not self._step == self._prev_step):
-            global_step = run_values.results['step']
-            current_loss = run_values.results['loss']
-            if current_loss < self.tolerance:
-                print("[Early Stopping Criterion Satisfied]")
-                run_context.request_stop()
-            self._prev_step = global_step
-        else:
-            global_step = run_values.results['step']
-            self._step = global_step
-
             
 # Initialize and train model 
 def main():
@@ -273,8 +220,7 @@ def main():
     # Initialize TensorFlow monitored training session
     with tf.train.MonitoredTrainingSession(
             checkpoint_dir = "./Model/Checkpoints/",
-            hooks = [tf.train.StopAtStepHook(last_step=training_steps),
-                     EarlyStoppingHook(x_data, y_data, tolerance=0.0025)],
+            hooks = [tf.train.StopAtStepHook(last_step=training_steps)],
             save_summaries_steps = None,
             save_checkpoint_steps = 5000) as sess:
 

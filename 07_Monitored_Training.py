@@ -11,8 +11,8 @@ class Model(object):
         self.y_data = y_data
         self.batch_size = batch_size
 
-        # Initialize data loader
-        self.dataset = self.initialize_loader()
+        # Initialize training dataset
+        self.initialize_dataset()
 
         # Define tensor for updating global step
         self.global_step = tf.train.get_or_create_global_step()
@@ -24,15 +24,14 @@ class Model(object):
     def set_session(self, sess):
         self.sess = sess
         
-    # Define loader for training dataset with mini-batch size 100
-    def initialize_loader(self):
-        dataset = tf.data.Dataset.from_tensor_slices((self.x_data,self.y_data))
-        dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(self.batch_size*5))
-        dataset = dataset.batch(self.batch_size)
-        dataset = dataset.prefetch(self.batch_size*5)
-        dataset = dataset.make_one_shot_iterator()
-        dataset = dataset.get_next()
-        return dataset
+    # Initialize dataset
+    def initialize_dataset(self):
+        self.dataset = tf.data.Dataset.from_tensor_slices((self.x_data,self.y_data))
+        self.dataset = self.dataset.apply(tf.contrib.data.shuffle_and_repeat(self.batch_size*5))
+        self.dataset = self.dataset.batch(self.batch_size)
+        self.dataset = self.dataset.prefetch(self.batch_size*5)
+        self.dataset = self.dataset.make_one_shot_iterator()
+        self.dataset = self.dataset.get_next()
 
     # Define graph for model
     def build_model(self):

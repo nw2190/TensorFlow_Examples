@@ -12,8 +12,8 @@ class Model(object):
         self.y_data = y_data
         self.batch_size = batch_size
 
-        # Initialize data loader
-        self.dataset, self.vdataset = self.initialize_loaders()
+        # Initialize training and validation datasets
+        self.initialize_datasets()
 
         # Define tensor for updating global step
         self.global_step = tf.train.get_or_create_global_step()
@@ -25,8 +25,8 @@ class Model(object):
     def set_session(self, sess):
         self.sess = sess
         
-    # Define loader for training dataset with mini-batch size 100
-    def initialize_loaders(self):
+    # Initialize datasets
+    def initialize_datasets(self):
         # Compute indices for training and validation
         indices = [n for n in range(0,self.x_data.shape[0])]
         shuffle(indices)
@@ -34,26 +34,24 @@ class Model(object):
         v_indices = indices[int(np.floor(0.8 * self.x_data.shape[0])) : ]
 
         # Define training dataset loader
-        dataset = tf.data.Dataset.from_tensor_slices((self.x_data[t_indices],self.y_data[t_indices]))
-        dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(self.batch_size*5))
-        dataset = dataset.batch(self.batch_size)
-        dataset = dataset.prefetch(self.batch_size*5)
-        dataset = dataset.make_one_shot_iterator()
-        dataset = dataset.get_next()
+        self.dataset = tf.data.Dataset.from_tensor_slices((self.x_data[t_indices],self.y_data[t_indices]))
+        self.dataset = self.dataset.apply(tf.contrib.data.shuffle_and_repeat(self.batch_size*5))
+        self.dataset = self.dataset.batch(self.batch_size)
+        self.dataset = self.dataset.prefetch(self.batch_size*5)
+        self.dataset = self.dataset.make_one_shot_iterator()
+        self.dataset = self.dataset.get_next()
 
         # Define validation dataset loader
-        vdataset = tf.data.Dataset.from_tensor_slices((self.x_data[v_indices],self.y_data[v_indices]))
-        vdataset = vdataset.apply(tf.contrib.data.shuffle_and_repeat(self.batch_size*5))
-        vdataset = vdataset.batch(self.batch_size)
-        vdataset = vdataset.prefetch(self.batch_size*5)
-        vdataset = vdataset.make_one_shot_iterator()
-        vdataset = vdataset.get_next()
+        self.vdataset = tf.data.Dataset.from_tensor_slices((self.x_data[v_indices],self.y_data[v_indices]))
+        self.vdataset = self.vdataset.apply(tf.contrib.data.shuffle_and_repeat(self.batch_size*5))
+        self.vdataset = self.vdataset.batch(self.batch_size)
+        self.vdataset = self.vdataset.prefetch(self.batch_size*5)
+        self.vdataset = self.vdataset.make_one_shot_iterator()
+        self.vdataset = self.vdataset.get_next()
 
         # Save training and validation indices
         self.t_indices = t_indices
         self.v_indices = v_indices
-        
-        return [dataset, vdataset]
 
     # Define method for retrieving training dataset
     def get_train_data(self):
@@ -69,28 +67,28 @@ class Model(object):
         wt_reg = tf.contrib.layers.l2_regularizer(0.0000001)
         
         # Define fully-connected layer with 10 hidden units
-        h = tf.layers.dense(X, 10, activation=tf.nn.sigmoid, kernel_regularizer=wt_reg,
-                            reuse=reuse, name='dense_1')
+        h = tf.layers.dense(X, 10, activation=tf.nn.leaky_relu, kernel_regularizer=wt_reg, reuse=reuse, name='dense_1')
         
-        # Define batch normalization layer
-        h = tf.layers.batch_normalization(h, scale=True, momentum=0.99, training=training,
-                                          reuse=reuse, name='bn_1')
+        # Define batch normalization layer followed by activation function
+        h = tf.layers.batch_normalization(h, scale=True, momentum=0.9, training=training, reuse=reuse, name='bn_1')
+        h = tf.nn.leaky_relu(h)
         
         # Define fully-connected layer with 20 hidden units
-        h = tf.layers.dense(h, 20, activation=tf.nn.sigmoid, kernel_regularizer=wt_reg,
-                            reuse=reuse, name='dense_2')
+        h = tf.layers.dense(h, 20, kernel_regularizer=wt_reg, reuse=reuse, name='dense_2')
         
-        # Define batch normalization layer
-        h = tf.layers.batch_normalization(h, scale=True, momentum=0.99, training=training,
-                                          reuse=reuse, name='bn_2')
+        # Define batch normalization layer followed by activation function
+        h = tf.layers.batch_normalization(h, scale=True, momentum=0.9, training=training, reuse=reuse, name='bn_2')
+        h = tf.nn.leaky_relu(h)
+        
+        # Define fully-connected layer with 10 hidden units and leaky_relu activation function
+        h = tf.layers.dense(h, 10, kernel_regularizer=wt_reg, reuse=reuse, name='dense_3')
 
-        # Define fully-connected layer with 10 hidden units
-        h = tf.layers.dense(h, 10, activation=tf.nn.sigmoid, kernel_regularizer=wt_reg,
-                            reuse=reuse, name='dense_3')
+        # Define batch normalization layer followed by activation function
+        h = tf.layers.batch_normalization(h, scale=True, momentum=0.9, training=training, reuse=reuse, name='bn_3')
+        h = tf.nn.leaky_relu(h)
 
         # Define fully-connected layer to single ouput prediction
-        pred = tf.layers.dense(h, 1, activation=None, kernel_regularizer=wt_reg,
-                               reuse=reuse, name='dense_4')
+        pred = tf.layers.dense(h, 1, kernel_regularizer=wt_reg, reuse=reuse, name='dense_4')
 
         # Assign name to final output
         pred = tf.identity(pred, name=name)
@@ -139,7 +137,7 @@ class Model(object):
     def train(self):
 
         # Specify initial learning rate
-        learning_rate = 0.0005
+        learning_rate = 0.0075
 
         # Define summary writer for saving log files (for training and validation)
         self.writer = tf.summary.FileWriter('./Model/logs/training/', graph=tf.get_default_graph())
@@ -156,7 +154,7 @@ class Model(object):
 
             # Apply decay to learning rate every 1000 steps
             if step % 1000 == 0:
-                learning_rate = 0.8*learning_rate
+                learning_rate = 0.9*learning_rate
 
             # Run optimization operation for current mini-batch
             fd = {self.x: x_batch, self.y: y_batch,
@@ -206,16 +204,17 @@ class Model(object):
 # Initialize and train model 
 def main():
 
-    # Create artificial data
-    x_data = np.pi/2 * np.random.normal(scale=0.333, size=[100*10000, 1])
-    noise = np.random.normal(scale=0.05, size=[100*10000, 1])
+    # Create artificial data (no noise by default)
+    x_data = np.pi/2 * np.random.normal(size=[100*10000, 1])
+    #x_data = np.pi/2 * np.random.normal(scale=0.333, size=[100*10000, 1])
+    noise = np.random.normal(scale=0.0, size=[100*10000, 1])
     y_data = np.sin(x_data) + noise
 
     # Initialize model
     model = Model(x_data, y_data, 100)
 
     # Specify number of training steps
-    training_steps = 20000
+    training_steps = 60000
 
     # Initialize TensorFlow monitored training session
     with tf.train.MonitoredTrainingSession(

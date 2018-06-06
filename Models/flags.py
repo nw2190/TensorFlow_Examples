@@ -7,7 +7,7 @@ def add_default_args(parser):
     parser.add_argument("--training_steps", default=20000, type=int, help="Total number of training steps")
     parser.add_argument("--batch_size", default=64, type=int, help="Training batch size")
     #parser.add_argument("--learning_rate", default=0.0002, type=float, help="Initial learning rate")
-    parser.add_argument("--learning_rate", default=0.001, type=float, help="Initial learning rate")
+    parser.add_argument("--learning_rate", default=0.0001, type=float, help="Initial learning rate")
     parser.add_argument("--lr_decay_step", default=1100, type=int, help="Learning rate decay step")
     parser.add_argument("--lr_decay_rate", default=0.75, type=float, help="Learning rate decay rate")
     parser.add_argument("--adam_beta1", default=0.5, type=float, help="Adam optimizer beta1 parameter")

@@ -16,12 +16,12 @@ class Model(object):
         self.y_data = y_data
         self.batch_size = batch_size
 
-        # Initialize data loader
-        self.dataset = self.initialize_loader()
+        # Initialize training dataset
+        self.initialize_dataset()
 
         # Define tensor for updating global step
         self.global_step = tf.train.get_or_create_global_step()
-
+        
         # Build graph for network model
         self.build_model()
 
@@ -29,15 +29,14 @@ class Model(object):
     def set_session(self, sess):
         self.sess = sess
         
-    # Define loader for training dataset with mini-batch size 100
-    def initialize_loader(self):
-        dataset = tf.data.Dataset.from_tensor_slices((self.x_data,self.y_data))
-        dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(self.batch_size*5))
-        dataset = dataset.batch(self.batch_size)
-        dataset = dataset.prefetch(self.batch_size*5)
-        dataset = dataset.make_one_shot_iterator()
-        dataset = dataset.get_next()
-        return dataset
+    # Initialize dataset
+    def initialize_dataset(self):
+        self.dataset = tf.data.Dataset.from_tensor_slices((self.x_data,self.y_data))
+        self.dataset = self.dataset.apply(tf.contrib.data.shuffle_and_repeat(self.batch_size*5))
+        self.dataset = self.dataset.batch(self.batch_size)
+        self.dataset = self.dataset.prefetch(self.batch_size*5)
+        self.dataset = self.dataset.make_one_shot_iterator()
+        self.dataset = self.dataset.get_next()
 
     # Define neural network for model
     def network(self, X, reuse=None):
@@ -152,7 +151,7 @@ class Model(object):
         
 # Define early stopping hook
 class EarlyStoppingHook(session_run_hook.SessionRunHook):
-    def __init__(self, tolerance=0.01):
+    def __init__(self, tolerance=0.00075):
         self.tolerance = tolerance
 
     # Initialize global and internal steps
@@ -191,7 +190,8 @@ class EarlyStoppingHook(session_run_hook.SessionRunHook):
 def main():
 
     # Create artificial data
-    x_data = np.pi/2 * np.random.normal(scale=0.333, size=[100*10000, 1])
+    #x_data = np.pi/2 * np.random.normal(scale=0.333, size=[100*10000, 1])
+    x_data = np.pi/2 * np.random.normal(size=[100*10000, 1])
     y_data = np.sin(x_data)
 
     # Initialize model
@@ -204,7 +204,7 @@ def main():
     with tf.train.MonitoredTrainingSession(
             checkpoint_dir = "./Model/Checkpoints/",
             hooks = [tf.train.StopAtStepHook(last_step=training_steps),
-                     EarlyStoppingHook(tolerance=0.000475)],
+                     EarlyStoppingHook(tolerance=0.00045)],
             save_summaries_steps = None,
             save_checkpoint_steps = 5000) as sess:
 

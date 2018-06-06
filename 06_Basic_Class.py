@@ -79,10 +79,14 @@ class Model(object):
             fd = {self.x: x_batch, self.y: y_batch, self.learning_rt: learning_rate}
             self.sess.run(self.optim, feed_dict=fd)
 
+    # Define method for computing model predictions
+    def predict(self, eval_pts):
+        return self.sess.run(self.pred, feed_dict={self.x: eval_pts})
+            
     # Plot predicted and true values for qualitative evaluation
     def evaluate(self):
         eval_pts = np.expand_dims(np.linspace(-np.pi/2, np.pi/2, 1000) , 1)
-        predictions = self.sess.run(self.pred, feed_dict={self.x: eval_pts})
+        predictions = self.predict(eval_pts)
         true_values = np.sin(eval_pts)
         plt.plot(eval_pts[:,0], predictions[:,0], 'b')
         plt.plot(eval_pts[:,0], true_values[:,0], 'r')

@@ -130,9 +130,11 @@ class Model(object):
         self.iterator = tf.data.Iterator.from_string_handle(self.dataset_handle, self.dataset.output_types, self.dataset.output_shapes)
         self.data = self.iterator.get_next()
         
+        # Define learning rate with exponential decay
+        self.learning_rt = tf.train.exponential_decay(self.learning_rate, self.global_step,
+                                                      self.lr_decay_step, self.lr_decay_rate)
 
         # Define placeholder for learning rate and training status
-        self.learning_rt = tf.placeholder(tf.float32, name='learning_rt')
         self.training = tf.placeholder(tf.bool, name='training')
 
         # Compute predictions and loss for training/validation datasets
@@ -144,7 +146,7 @@ class Model(object):
 
         # Define optimizer for training
         with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
-            self.optim = tf.train.AdamOptimizer(self.learning_rate, beta1=self.adam_beta1) \
+            self.optim = tf.train.AdamOptimizer(self.learning_rt, beta1=self.adam_beta1) \
                                  .minimize(self.loss, global_step=self.global_step)
         
         # Define summary operations
@@ -181,12 +183,8 @@ class Model(object):
             if self.sess.should_stop():
                 break
 
-            # Apply decay to learning rate
-            if step % self.lr_decay_step == 0:
-                self.learning_rate = np.power(self.lr_decay_rate, step/self.lr_decay_step)*self.learning_rate
-
             # Specify feed dictionary
-            fd = {self.dataset_handle: self.training_handle, self.learning_rt: self.learning_rate, self.training: True}
+            fd = {self.dataset_handle: self.training_handle, self.training: True}
 
             # Save summaries, display progress, and update model
             if (step % self.summary_step == 0) and (step % self.display_step == 0):

@@ -173,8 +173,11 @@ class Model(object):
         self.iterator = tf.data.Iterator.from_string_handle(self.dataset_handle, self.dataset.output_types, self.dataset.output_shapes)
         self.data = self.iterator.get_next()
 
-        # Define placeholder for learning rate and training status
-        self.learning_rt = tf.placeholder(tf.float32, name='learning_rt')
+        # Define learning rate with exponential decay
+        self.learning_rt = tf.train.exponential_decay(self.learning_rate, self.global_step,
+                                                      self.lr_decay_step, self.lr_decay_rate)
+
+        # Define placeholder for training status
         self.training = tf.placeholder(tf.bool, name='training')
 
         # Compute predictions and loss for training/validation datasets
@@ -186,9 +189,9 @@ class Model(object):
 
         # Define optimizers for training the discriminator and generator
         with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
-            self.d_optim = tf.train.AdamOptimizer(self.learning_rate, beta1=self.adam_beta1) \
+            self.d_optim = tf.train.AdamOptimizer(self.learning_rt, beta1=self.adam_beta1) \
                       .minimize(self.d_loss, var_list=d_vars, global_step=self.global_step)
-            self.g_optim = tf.train.AdamOptimizer(self.learning_rate*5, beta1=self.adam_beta1) \
+            self.g_optim = tf.train.AdamOptimizer(self.learning_rt*5, beta1=self.adam_beta1) \
                       .minimize(self.g_loss, var_list=g_vars)
 
         # Define summary operations
@@ -223,14 +226,9 @@ class Model(object):
             # Update global step            
             step = tf.train.global_step(self.sess, self.global_step)
 
-            # Apply decay to learning rate
-            if step % self.lr_decay_step == 0:
-                self.learning_rate = self.lr_decay_rate*self.learning_rate
-
             # Generate random samples for generator input and specify feed dictionary
             z_batch = self.sample_z(self.batch_size)
-            fd = {self.dataset_handle: self.training_handle, self.z: z_batch,
-                  self.learning_rt: self.learning_rate, self.training: True}
+            fd = {self.dataset_handle: self.training_handle, self.z: z_batch, self.training: True}
 
             # Save summariesm display progress and update model
             if (step % self.summary_step == 0) and (step % self.display_step == 0):

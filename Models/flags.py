@@ -6,10 +6,6 @@ def add_default_args(parser):
     # Default training options
     parser.add_argument("--training_steps", default=20000, type=int, help="Total number of training steps")
     parser.add_argument("--batch_size", default=64, type=int, help="Training batch size")
-    #parser.add_argument("--learning_rate", default=0.0002, type=float, help="Initial learning rate")
-    parser.add_argument("--learning_rate", default=0.0001, type=float, help="Initial learning rate")
-    parser.add_argument("--lr_decay_step", default=1100, type=int, help="Learning rate decay step")
-    parser.add_argument("--lr_decay_rate", default=0.75, type=float, help="Learning rate decay rate")
     parser.add_argument("--adam_beta1", default=0.5, type=float, help="Adam optimizer beta1 parameter")
     parser.add_argument("--gpu_count", default=None, type=int, help="Number of GPUs available")
     
@@ -32,6 +28,11 @@ def getFlags_Classifier():
     # Initialize argument parser and add default arguments
     parser = ArgumentParser(description='Argument Parser')
     parser = add_default_args(parser)
+
+    # Specify learning rate
+    parser.add_argument("--learning_rate", default=0.0002, type=float, help="Initial learning rate")
+    parser.add_argument("--lr_decay_step", default=1100, type=int, help="Learning rate decay step")
+    parser.add_argument("--lr_decay_rate", default=0.75, type=float, help="Learning rate decay rate")
     
     # Classifier hyperparameters
     parser.add_argument("--label_count", default=10, type=int, help="Total number of labels")
@@ -51,6 +52,11 @@ def getFlags_GAN():
     parser = ArgumentParser(description='Argument Parser')
     parser = add_default_args(parser)
     
+    # Specify learning rate
+    parser.add_argument("--learning_rate", default=0.0002, type=float, help="Initial learning rate")
+    parser.add_argument("--lr_decay_step", default=1100, type=int, help="Learning rate decay step")
+    parser.add_argument("--lr_decay_rate", default=0.75, type=float, help="Learning rate decay rate")
+
     # GAN hyperparameters
     parser.add_argument("--z_dim", default=62, type=int, help="Dimension of noise vector in latent space")
     parser.add_argument("--g_res", default=7, type=int, help="Resolution of initial reshaped features in generator")
@@ -68,6 +74,11 @@ def getFlags_VAE():
     parser = ArgumentParser(description='Argument Parser')
     parser = add_default_args(parser)
     
+    # Specify learning rate
+    parser.add_argument("--learning_rate", default=0.0002, type=float, help="Initial learning rate")
+    parser.add_argument("--lr_decay_step", default=1100, type=int, help="Learning rate decay step")
+    parser.add_argument("--lr_decay_rate", default=0.75, type=float, help="Learning rate decay rate")
+
     # VAE hyperparameters
     parser.add_argument("--z_dim", default=62, type=int, help="Dimension of noise vector in latent space")
     parser.add_argument("--min_res", default=7, type=int, help="Resolution of initial reshaped features in encoder/decoder")
@@ -80,4 +91,27 @@ def getFlags_VAE():
     args = parser.parse_args()
     return args
 
+
+# Define flags to specify model hyperparameters and training options for RNN Classifier Model
+def getFlags_RNN_Classifier():
+
+    # Initialize argument parser and add default arguments
+    parser = ArgumentParser(description='Argument Parser')
+    parser = add_default_args(parser)
+
+    # Specify learning rate
+    parser.add_argument("--learning_rate", default=0.001, type=float, help="Initial learning rate")
+    parser.add_argument("--lr_decay_step", default=1100, type=int, help="Learning rate decay step")
+    parser.add_argument("--lr_decay_rate", default=0.75, type=float, help="Learning rate decay rate")
+    
+    # RNN Classifier hyperparameters
+    parser.add_argument("--label_count", default=10, type=int, help="Total number of labels")
+    parser.add_argument("--plot_count", default=15, type=int, help="Number of predictions to display during training")
+    parser.add_argument("--early_stopping_start", default=0, type=int, help="Starting step for early stopping checks")
+    parser.add_argument("--early_stopping_step", default=2000, type=int, help="Steps between early stopping checks")
+    parser.add_argument("--early_stopping_tol", default=0.005, type=float, help="Tolerance for early stopping")
+
+    # Parse arguments from command line
+    args = parser.parse_args()
+    return args
 

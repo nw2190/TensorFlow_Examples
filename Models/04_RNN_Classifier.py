@@ -101,9 +101,9 @@ class Model(object):
         probs = tf.nn.sigmoid(logits, name=name+"_probs")
         return probs, logits
 
-    # Compute softmax cross entropy loss
+    # Compute sigmoid cross entropy loss
     def compute_cross_entropy(self, logits, labels, name=None):
-        return tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=logits, labels=labels), name=name)
+        return tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=labels), name=name)
 
     # Evaluate model on specified batch of data
     def evaluate_model(self, data, reuse=None, training=True, suffix=None):
@@ -114,7 +114,7 @@ class Model(object):
         # Classify input images
         probs, logits = self.classifier(images, training=training, reuse=reuse, name=add_suffix("classifier", suffix))
 
-        # Compute softmax cross entropy loss
+        # Compute sigmoid cross entropy loss
         loss = self.compute_cross_entropy(logits, labels, name=add_suffix("loss", suffix))
         
         return images, labels, probs, logits, loss

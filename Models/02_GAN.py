@@ -129,7 +129,7 @@ class Model(object):
     def sample_z(self, batch_size):
         return np.random.uniform(-1., 1., size=(batch_size, self.z_dim))
 
-    # Compute sigmoid cross entropy loss
+    # Compute sigmoid cross entropy loss (for binary classification "real"/"fake")
     def compute_cross_entropy(self, logits, labels, name=None):
         return tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=labels), name=name)
     
@@ -204,6 +204,10 @@ class Model(object):
         self.pred_sample = self.generator(self.z, training=False, reuse=True, name="sampling_generator")
         self.resized_pred = tf.image.resize_images(self.pred_sample, [self.plot_res, self.plot_res])
 
+        # Compute random sample for freezing model
+        rand_z = tf.random_uniform([1,self.z_dim], minval=-1.0, maxval=1.0, dtype=tf.float32, name='rand_z')
+        rand_sample = self.generator(rand_z, training=False, reuse=True, name="rand_sample")
+        resized_sample = tf.image.resize_images(rand_sample, [self.plot_res, self.plot_res])
         
     # Train model
     def train(self):

@@ -21,8 +21,7 @@ from flags import getFlags_GAN
 class Model(object):
     
     # Initialize model
-    def __init__(self, data_count, flags):
-        self.data_count = data_count
+    def __init__(self, flags):
         
         # Read keys/values from flags and assign to self
         for key, val in flags.__dict__.items():
@@ -308,7 +307,7 @@ def main():
     FLAGS = getFlags_GAN()
 
     # Initialize model
-    model = Model(70000, FLAGS)
+    model = Model(FLAGS)
 
     # Specify number of training steps
     training_steps = FLAGS.__dict__['training_steps']

@@ -4,6 +4,7 @@ from argparse import ArgumentParser
 def add_default_args(parser):
 
     # Default training options
+    parser.add_argument("--data_count", default=70000, type=int, help="Total number of training examples")
     parser.add_argument("--training_steps", default=20000, type=int, help="Total number of training steps")
     parser.add_argument("--batch_size", default=64, type=int, help="Training batch size")
     parser.add_argument("--adam_beta1", default=0.5, type=float, help="Adam optimizer beta1 parameter")
